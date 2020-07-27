@@ -13,7 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from annoying.decorators import ajax_request
 
-from Insta.models import Post, Like
+from Insta.models import Post, Like, InstaUser, UserConnection
 
 class HelloWorld(TemplateView):
     # overwrite the template_name
@@ -25,6 +25,13 @@ class PostsView(ListView):
     model = Post
     # pass the Post model to index.html
     template_name = 'index.html'
+
+    def get_queryset(self):
+        current_user = self.request.user
+        following = set()
+        for conn in UserConnection.objects.filter(creator=current_user).select_related('following'):
+            following.add(conn.following)
+        return Post.objects.filter(author__in=following)
 
 
 class PostDetailView(DetailView):
@@ -77,3 +84,7 @@ def addLike(request):
         'result': result,
         'post_pk': post_pk
     }
+
+class UserDetailView(DetailView):
+    model = InstaUser
+    template_name = 'user_detail.html'
